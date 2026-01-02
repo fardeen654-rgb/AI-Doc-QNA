@@ -5,50 +5,41 @@ from dotenv import load_dotenv
 load_dotenv()
 
 class QAEngine:
-    """
-    Citation-aware QA Engine using Groq (FREE & High Speed)
-    """
-
     def __init__(self):
-        api_key = os.getenv("GROQ_API_KEY")
-        if not api_key:
-            raise ValueError("GROQ_API_KEY not found in .env")
+        self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-        self.client = Groq(api_key=api_key)
+    def generate_answer(self, question, chunks):
+        if not chunks:
+            return {"answer": "Answer not found in the provided document.", "confidence": 0.0, "sources": []}
 
-    def generate_answer(self, question: str, context_chunks: list) -> dict:
+        # Format context with explicit source markers
+        context = "\n\n".join(f"Source: {c['source']}\nContent: {c['text']}" for c in chunks)
+
+        system_prompt = """
+        You are a document-grounded assistant.
+        Rules:
+        1. Answer ONLY from the provided context. Do NOT use external knowledge.
+        2. If the answer is not in the context, say "Answer not found in the provided document."
+        3. Be precise. Cite your findings.
         """
-        Generates answer + returns supporting document chunks.
-        """
-        if not context_chunks:
-            return {
-                "answer": "Answer not found in the document.",
-                "sources": []
-            }
 
-        # Combine the top retrieved chunks into one context string
-        context = "\n\n".join(context_chunks)
-
-        # The System Prompt for Grounding
-        system_prompt = "You are a professional assistant. Answer questions ONLY using the provided document context. If the answer is not in the context, say 'Answer not found in the document.' Be concise."
-        
         user_prompt = f"DOCUMENT CONTEXT:\n{context}\n\nQUESTION: {question}"
 
-        try:
-            response = self.client.chat.completions.create(
-                model="llama-3.3-70b-versatile",
-                messages=[
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
-                ],
-                temperature=0.1  # Low temperature keeps it factual
-            )
+        response = self.client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            temperature=0.1 # Low temperature for factual consistency
+        )
 
-            # Return both the AI text and the top 2 chunks as 'sources'
-            return {
-                "answer": response.choices[0].message.content.strip(),
-                "sources": context_chunks[:2]
-            }
+        answer = response.choices[0].message.content.strip()
+        # Basic confidence score based on chunk availability
+        confidence = min(1.0, len(chunks) / 8)
 
-        except Exception as e:
-            return {"answer": f"Groq Error: {str(e)}", "sources": []}
+        return {
+            "answer": answer,
+            "confidence": round(confidence, 2),
+            "sources": chunks[:2] # Top 2 citations
+        }

@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+
+{% block title %}User Management - Admin{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h3 class="fw-bold"><i class="bi bi-people-fill text-primary me-2"></i>User Management</h3>
+        <p class="text-muted">Overview of all registered users and their access levels.</p>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 rounded-4">
+    <div class="card-body p-4">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID</th>
+                        <th>User Info</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td><span class="text-muted small">#{{ user.id }}</span></td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ user.username }}</div>
+                            <div class="small text-muted">{{ user.email }}</div>
+                        </td>
+                        <td>
+                            <span class="badge {% if user.role == 'admin' %}bg-primary{% else %}bg-secondary{% endif %} rounded-pill">
+                                {{ user.role | upper }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge bg-success-soft text-success small">
+                                <i class="bi bi-circle-fill me-1" style="font-size: 0.5rem;"></i> Active
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{{ url_for('admin.user_detail', user_id=user.id) }}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                <i class="bi bi-search me-1"></i> Inspect Activity
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">No users found in the system.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-3">
+    <a href="/" class="btn btn-link text-decoration-none text-muted">
+        <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+    </a>
+</div>
+{% endblock %}

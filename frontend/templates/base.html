@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AI Document Q&A{% endblock %}</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --glass-bg: rgba(255, 255, 255, 0.95);
+        }
+
+        body {
+            background-color: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+            color: #333;
+        }
+
+        /* Modern Navbar Styling */
+        .navbar {
+            background: white !important;
+            border-bottom: 1px solid #eee;
+            padding: 0.75rem 0;
+        }
+
+        /* Day 24 Beautification: Card Lift & Shadows */
+        .card {
+            border: none;
+            border-radius: 12px;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.08) !important;
+        }
+
+        /* Gradient Banner for Activity */
+        .activity-banner {
+            background: var(--primary-gradient);
+            color: white;
+            border-radius: 12px;
+        }
+
+        /* Custom Scrollbar for History */
+        .history-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .history-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .history-scroll::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 10px;
+        }
+
+        /* Navigation Links */
+        .nav-link {
+            font-weight: 500;
+            color: #555 !important;
+            transition: color 0.2s;
+        }
+        .nav-link:hover {
+            color: #667eea !important;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            border: none;
+            border-radius: 8px;
+            padding: 0.6rem 1.2rem;
+        }
+        .btn-primary:hover {
+            background: #764ba2;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg sticky-top mb-4">
+        <div class="container">
+            <a class="navbar-brand fw-bold d-flex align-items-center" href="/">
+                <i class="bi bi-file-earmark-medical-fill text-primary me-2 fs-4"></i>
+                <span class="text-dark">AI Doc Q&A</span>
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto align-items-center">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role == 'admin' %}
+                            <li class="nav-item">
+                                <a class="nav-link px-3" href="/users">
+                                    <i class="bi bi-people me-1"></i> Users
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link px-3" href="/admin/analytics">
+                                    <i class="bi bi-bar-chart-line me-1"></i> System Analytics
+                                </a>
+                            </li>
+                        {% endif %}
+
+                        <li class="nav-item ms-lg-3">
+                            <span class="navbar-text text-muted small me-3">
+                                Hi, <strong class="text-dark">{{ current_user.username }}</strong>
+                            </span>
+                        </li>
+                        <li class="nav-item">
+                            <a href="/logout" class="btn btn-sm btn-outline-danger rounded-pill px-3 fw-bold">
+                                <i class="bi bi-box-arrow-right me-1"></i>Logout
+                            </a>
+                        </li>
+                    {% else %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="/login">Login</a>
+                        </li>
+                        <li class="nav-item ms-2">
+                            <a class="btn btn-primary btn-sm rounded-pill text-white px-4" href="/signup">Sign Up</a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-info alert-dismissible fade show rounded-4 border-0 shadow-sm mb-4" role="alert">
+                        <i class="bi bi-info-circle-fill me-2"></i> {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+    </div>
+
+    <footer class="text-center py-4 mt-5 text-muted small">
+        <p>&copy; 2026 AI Document Q&A Platform | <a href="/health" class="text-decoration-none text-success"><i class="bi bi-heart-pulse-fill"></i> System Health: OK</a></p>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

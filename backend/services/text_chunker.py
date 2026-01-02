@@ -1,32 +1,20 @@
-def chunk_text(
-    text: str,
-    source: str,
-    chunk_size: int = 500,
-    overlap: int = 100
-) -> list:
-    """
-    Split text into overlapping chunks with source metadata.
-    Returns list of dicts: [{"text": "...", "source": "file.pdf"}]
-    """
-    if not text:
-        return []
-
+def chunk_text(text, source, chunk_size=500, overlap=100):
+    """Chunks text with overlap to preserve context across boundaries."""
     chunks = []
     start = 0
-    length = len(text)
 
-    while start < length:
+    while start < len(text):
         end = start + chunk_size
-        chunk_content = text[start:end].strip()
+        chunk = text[start:end].strip()
 
-        if chunk_content:
+        # Only keep chunks that carry meaningful information
+        if len(chunk) > 100:
             chunks.append({
-                "text": chunk_content,
+                "text": chunk,
                 "source": source
             })
 
-        start = end - overlap
-        if start < 0:
-            start = 0
+        # Slide the window forward by less than chunk_size to create overlap
+        start += chunk_size - overlap
 
     return chunks
