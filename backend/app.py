@@ -204,5 +204,10 @@ def create_app():
     return app
 
 if __name__ == "__main__":
+    # Get the port from Render's environment, default to 5000 for local testing
+    port = int(os.environ.get("PORT", 5000))
+    
+    # Run with host '0.0.0.0' to be accessible on Render
+    # Set debug=False for production safety
     app = create_app()
-    app.run(debug=True)
+    app.run(host="0.0.0.0", port=port, debug=False)
