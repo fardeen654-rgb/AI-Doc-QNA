@@ -10,7 +10,7 @@ from flask import (
 from flask_login import LoginManager, login_required, current_user
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
-from xhtml2pdf import pisa  # 🟢 New PDF Library
+from xhtml2pdf import pisa  # Stable HTML-to-PDF converter
 
 # 1. LOAD CONFIG & DATABASE
 load_dotenv()
@@ -59,7 +59,7 @@ def create_app():
     
     db.init_app(app)
 
-    # REGISTER BLUEPRINTS
+    # 🟢 FIX: REGISTER BLUEPRINTS (Resolves the 404 Page Not Found)
     from authentication import auth 
     from admin import admin as admin_blueprint
     app.register_blueprint(auth)
@@ -105,29 +105,30 @@ def create_app():
     @app.route("/export/pdf")
     @login_required
     def export_pdf():
-        """Generates PDF using HTML templates for better text wrapping."""
+        """Generates PDF using HTML templates to prevent horizontal space errors."""
         history = ChatHistory.query.filter_by(user_id=current_user.id).order_by(ChatHistory.created_at.desc()).all()
         
-        # Create a simple HTML string for the PDF content
-        html_content = f"<html><body><h1 style='text-align:center;'>Chat History: {current_user.username}</h1>"
+        # Build HTML content for the PDF
+        html_content = f"""
+        <html>
+        <head><style>body {{ font-family: Helvetica; padding: 20px; }} .entry {{ border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 10px; }}</style></head>
+        <body>
+            <h1 style='text-align:center;'>Chat History: {current_user.username}</h1>
+        """
         for item in history:
-            html_content += f"<div style='border-bottom:1px solid #ccc; padding:10px;'>"
-            html_content += f"<p><b>Q:</b> {item.question}</p>"
-            html_content += f"<p><b>A:</b> {item.answer}</p>"
-            html_content += f"<p style='font-size:10px; color:#666;'>Date: {item.created_at}</p></div>"
+            html_content += f"""
+            <div class='entry'>
+                <p><strong>Q:</strong> {item.question}</p>
+                <p><strong>A:</strong> {item.answer}</p>
+                <p style='font-size:10px; color:#888;'>Date: {item.created_at}</p>
+            </div>"""
         html_content += "</body></html>"
 
-        # Convert HTML to PDF in memory
         pdf_out = io.BytesIO()
-        pisa.CreatePDF(html_content, dest=pdf_out)
+        pisa.CreatePDF(html_content, dest=pdf_out) #
         pdf_out.seek(0)
 
-        return send_file(
-            pdf_out,
-            mimetype="application/pdf",
-            as_attachment=True,
-            download_name="chat_history.pdf"
-        )
+        return send_file(pdf_out, mimetype="application/pdf", as_attachment=True, download_name="chat_history.pdf")
 
     # --- HOME LOGIC ---
     @app.route("/", methods=["GET", "POST"])
@@ -204,10 +205,5 @@ def create_app():
     return app
 
 if __name__ == "__main__":
-    # Get the port from Render's environment, default to 5000 for local testing
-    port = int(os.environ.get("PORT", 10000))
-    
-    # Run with host '0.0.0.0' to be accessible on Render
-    # Set debug=False for production safety
     app = create_app()
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(debug=True)

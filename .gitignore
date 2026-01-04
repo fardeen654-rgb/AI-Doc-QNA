@@ -1,5 +1,6 @@
 venv/
 __pycache__/
+*.db
 .env
-*.pyc
-data/
+uploads/
+indices/

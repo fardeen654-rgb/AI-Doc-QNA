@@ -1,43 +1,50 @@
 {% extends "base.html" %}
-
-{% block title %}User Management - Admin{% endblock %}
+{% block title %}User Inspection{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm border-0 mt-4">
-    <div class="card-body p-4">
-        <h3 class="mb-4"><i class="bi bi-people-fill text-primary me-2"></i>Registered Users</h3>
-        
-        <div class="table-responsive">
-            <table class="table table-hover align-middle">
-                <thead class="table-light">
-                    <tr>
-                        <th>ID</th>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Role</th>
-                        <th>Joined Date</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for user in users %}
-                    <tr>
-                        <td>{{ user.id }}</td>
-                        <td><strong>{{ user.username }}</strong></td>
-                        <td>{{ user.email }}</td>
-                        <td>
-                            <span class="badge {% if user.role == 'admin' %}bg-primary{% else %}bg-secondary{% endif %}">
-                                {{ user.role }}
-                            </span>
-                        </td>
-                        <td class="small text-muted">
-                            {{ user.created_at.strftime('%Y-%m-%d') if user.created_at else 'N/A' }}
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="row mb-4">
+    <div class="col">
+        <h3>User File & Activity Log: <span class="text-primary">{{ user.username }}</span></h3>
+        <a href="/admin" class="btn btn-link px-0 text-decoration-none">⬅ Back to Dashboard</a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card chat-card p-3 h-100 shadow-sm border-0">
+            <h5>📄 Uploaded Documents</h5>
+            <ul class="list-group list-group-flush mt-3">
+                {% for pdf in pdfs %}
+                <li class="list-group-item d-flex justify-content-between align-items-center">
+                    <span class="text-truncate" style="max-width: 180px;">{{ pdf }}</span>
+                    <span class="badge bg-secondary rounded-pill small">PDF</span>
+                </li>
+                {% else %}
+                <p class="text-muted small px-3">No documents found for this user.</p>
+                {% endfor %}
+            </ul>
         </div>
-        <a href="/" class="btn btn-outline-secondary mt-3 rounded-pill">Back to Dashboard</a>
+    </div>
+
+    <div class="col-md-8">
+        <div class="card chat-card p-3 h-100 shadow-sm border-0">
+            <h5>💬 Full Chat Log</h5>
+            <div class="overflow-auto mt-3" style="max-height: 600px;">
+                {% for chat in chats %}
+                <div class="border-bottom py-3">
+                    <p class="mb-1 text-primary"><strong>Q:</strong> {{ chat.question }}</p>
+                    <p class="mb-0 text-muted small"><strong>A:</strong> {{ chat.answer }}</p>
+                    <div class="text-end">
+                        <small class="text-muted" style="font-size: 0.75rem;">
+                            {{ chat.created_at.strftime('%Y-%m-%d %H:%M') if chat.created_at }}
+                        </small>
+                    </div>
+                </div>
+                {% else %}
+                <p class="text-muted py-4 text-center">No interactions recorded yet.</p>
+                {% endfor %}
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

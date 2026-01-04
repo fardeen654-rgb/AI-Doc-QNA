@@ -1,16 +1,22 @@
 from sentence_transformers import SentenceTransformer
-import os
 
 class EmbeddingService:
-    def __init__(self):
-        self._model = None  # Don't load yet!
+    """
+    Handles converting text chunks into numerical vectors (embeddings).
+    """
 
-    def get_model(self):
-        if self._model is None:
-            # Use 'all-MiniLM-L6-v2' (only ~80MB) instead of heavier models
-            self._model = SentenceTransformer('all-MiniLM-L6-v2')
-        return self._model
+    def __init__(self, model_name: str = "all-MiniLM-L6-v2"):
+        # This downloads the model on the first run (approx 80MB)
+        self.model = SentenceTransformer(model_name)
 
-    def embed(self, text):
-        model = self.get_model()
-        return model.encode(text)
+    def embed_texts(self, texts: list):
+        """
+        Convert list of text chunks into embeddings.
+        Returns a list of vectors (arrays of numbers).
+        """
+        if not texts:
+            return []
+
+        # encode() turns words into math!
+        embeddings = self.model.encode(texts, show_progress_bar=True)
+        return embeddings
