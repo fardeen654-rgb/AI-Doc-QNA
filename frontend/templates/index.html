@@ -1,136 +1,242 @@
 {% extends "base.html" %}
 
-{% block title %}Dashboard - AI Document Q&A{% endblock %}
+{% block title %}AI Doc Q&A - Professional Intelligence Hub{% endblock %}
 
 {% block content %}
-<div class="row">
-    <div class="col-lg-8">
-        
-        <div class="card shadow-sm border-0 mb-4 activity-banner text-white">
-            <div class="card-body p-4 d-flex justify-content-between align-items-center">
-                <div>
-                    <h5 class="mb-1"><i class="bi bi-graph-up-arrow me-2"></i>Today’s Activity</h5>
-                    <p class="mb-0 small opacity-75">Daily limit: <strong>{{ max_limit }} questions</strong></p>
+<div class="container-fluid py-4 px-xl-5">
+    <div class="row g-4">
+        <div class="col-lg-8">
+            
+            <div class="card shadow-sm border-0 mb-4 bg-primary text-white overflow-hidden" style="background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%);">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h5 class="mb-1"><i class="bi bi-graph-up-arrow me-2"></i>Today’s Activity</h5>
+                        <p class="mb-0 small opacity-75 text-uppercase fw-bold tracking-wider">Daily limit: <strong>{{ max_limit }} questions</strong></p>
+                    </div>
+                    <div class="d-flex gap-3">
+                        {% for stat in stats %}
+                        <div class="text-center bg-white bg-opacity-25 rounded px-3 py-2 border border-white border-opacity-10 backdrop-blur">
+                            <div class="fw-bold fs-4 leading-none">{{ stat.count }}</div>
+                            <div class="small text-uppercase opacity-75 fw-bold" style="font-size: 0.6rem;">
+                                {{ stat.action.replace('_', ' ') }}
+                            </div>
+                        </div>
+                        {% else %}
+                        <div class="small italic opacity-75">No activity recorded today.</div>
+                        {% endfor %}
+                    </div>
                 </div>
-                <div class="d-flex gap-3">
-                    {% for stat in stats %}
-                    <div class="text-center bg-white bg-opacity-25 rounded px-3 py-2">
-                        <div class="fw-bold fs-4">{{ stat.count }}</div>
-                        <div class="small text-uppercase" style="font-size: 0.65rem;">
-                            {{ stat.action.replace('_', ' ') }}
+            </div>
+
+            <div class="card border-0 shadow-sm rounded-4 bg-white mb-4">
+                <div class="card-body p-4 p-xl-5">
+                    <div class="text-center mb-5">
+                        <div class="ai-brand-icon mb-3">
+                            <i class="bi bi-robot"></i>
+                        </div>
+                        <h2 class="fw-bold text-slate">AI Assistant</h2>
+                        <p class="text-muted">Analyze your documents with precision intelligence</p>
+                    </div>
+
+                    <form method="POST" class="mb-5">
+                        <div class="search-dock shadow-sm">
+                            <i class="bi bi-search text-muted ms-3"></i>
+                            <input type="text" name="query" class="form-control border-0 shadow-none ps-3"
+                                   placeholder="Ask a question about your indexed files..." required>
+                            <button type="submit" class="btn btn-indigo rounded-pill px-4 me-2">
+                                <span>Analyze</span>
+                                <i class="bi bi-arrow-right-short ms-1"></i>
+                            </button>
+                        </div>
+                    </form>
+
+                    {% if answer_data %}
+                    <div class="answer-container animate-fade-in">
+                        <div class="d-flex align-items-center justify-content-between mb-3">
+                            <div class="d-flex align-items-center">
+                                <span class="badge bg-indigo-subtle text-indigo px-3 py-2 rounded-pill fw-bold small">
+                                    <i class="bi bi-stars me-1"></i> AI RESPONSE
+                                </span>
+                            </div>
+                            <div class="confidence-tag">
+                                {% set conf = answer_data.confidence * 100 %}
+                                <div class="progress" style="width: 60px; height: 4px;">
+                                    <div class="progress-bar bg-indigo" style="width: {{ conf }}%"></div>
+                                </div>
+                                <span class="ms-2 x-small fw-bold text-muted">{{ conf|round|int }}% CONFIDENCE</span>
+                            </div>
+                        </div>
+                        <div class="answer-text mb-4">{{ answer_data.answer }}</div>
+
+                        <h6 class="text-uppercase tracking-widest text-muted x-small fw-bold mb-3">Verified Sources</h6>
+                        <div class="row g-3">
+                            {% for src in answer_data.sources %}
+                            <div class="col-md-6">
+                                <div class="source-card h-100">
+                                    <div class="d-flex align-items-center gap-2 mb-2">
+                                        <i class="bi bi-file-earmark-check-fill text-indigo"></i>
+                                        <span class="fw-bold text-slate small text-truncate">{{ src.source }}</span>
+                                    </div>
+                                    <p class="source-snippet">"{{ src.text|truncate(120) }}"</p>
+                                </div>
+                            </div>
+                            {% endfor %}
                         </div>
                     </div>
-                    {% else %}
-                    <div class="small italic">No activity yet.</div>
-                    {% endfor %}
+                    {% endif %}
                 </div>
             </div>
-        </div>
 
-        <div class="card shadow-sm border-0 mb-4 overflow-hidden">
-            <div class="card-header bg-white border-0 pt-4 px-4">
-                <h5 class="fw-bold">
-                    <i class="bi bi-chat-dots-fill text-primary me-2"></i>AI Assistant
-                </h5>
-            </div>
-            <div class="card-body p-4">
-                <form method="POST">
-                    <div class="input-group input-group-lg shadow-sm rounded-pill overflow-hidden border mb-3">
-                        <input type="text" name="query" class="form-control border-0 ps-4"
-                               placeholder="Ask about your docs..." required>
-                        <button type="submit" class="btn btn-primary px-4 border-0">
-                            <i class="bi bi-send-fill"></i>
-                        </button>
+            <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold text-slate mb-0"><i class="bi bi-hdd-stack me-2 text-indigo"></i>Knowledge Base</h5>
+                        <span class="badge bg-light text-muted border rounded-pill">{{ pdfs|length }} Documents</span>
                     </div>
-                </form>
+                    
+                    <form method="POST" enctype="multipart/form-data" class="upload-container mb-4">
+                        <div class="d-flex align-items-center gap-3 w-100">
+                            <input type="file" name="pdf_files" multiple class="form-control border-0 shadow-none bg-transparent" required>
+                            <button class="btn btn-dark rounded-3 px-4 fw-bold">Index Files</button>
+                        </div>
+                    </form>
 
-                {% if answer_data %}
-                <div class="p-3 bg-light rounded border-start border-success border-4 mb-3">
-                    <h6 class="text-success fw-bold">Answer:</h6>
-                    <p class="mb-0 fs-5 text-dark">{{ answer_data.answer }}</p>
-                </div>
-
-                <div class="mt-3 p-3 bg-white rounded shadow-sm border">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        {% set conf = answer_data.confidence * 100 %}
-                        <span class="badge {% if conf > 80 %}bg-success{% elif conf > 50 %}bg-warning text-dark{% else %}bg-danger{% endif %} py-2 px-3">
-                            Confidence: {{ conf|round|int }}%
-                        </span>
-                    </div>
-
-                    <h6 class="fw-bold mb-2 mt-3">Sources & Citations:</h6>
-                    <ul class="list-unstyled mb-0">
-                        {% for src in answer_data.sources %}
-                        <li class="mb-2 p-2 rounded-2 bg-light border-start border-primary border-3">
-                            <div class="small d-flex justify-content-between">
-                                <span class="fw-bold text-primary">{{ src.source }}</span>
+                    <div class="row g-3">
+                        {% for pdf in pdfs %}
+                        <div class="col-md-6 col-xl-4">
+                            <div class="document-item group">
+                                <div class="d-flex align-items-center gap-3 overflow-hidden">
+                                    <div class="doc-icon"><i class="bi bi-file-pdf"></i></div>
+                                    <div class="doc-meta text-truncate">
+                                        <div class="doc-name text-truncate">{{ pdf }}</div>
+                                    </div>
+                                </div>
+                                <form method="POST" action="{{ url_for('delete_pdf', filename=pdf) }}" onsubmit="return confirm('Delete and re-index?');">
+                                    <button class="btn-delete"><i class="bi bi-trash3"></i></button>
+                                </form>
                             </div>
-                            <p class="text-muted mb-0 x-small"
-                               style="font-size: 0.75rem; display: -webkit-box;
-                               -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;">
-                                {{ src.text }}
-                            </p>
-                        </li>
+                        </div>
                         {% endfor %}
-                    </ul>
+                    </div>
                 </div>
-                {% endif %}
             </div>
         </div>
 
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-body p-4">
-                <h4 class="card-title mb-3 fw-bold">Library</h4>
-                <form method="POST" enctype="multipart/form-data" class="row g-3 mb-4">
-                    <div class="col-sm-9">
-                        <input type="file" name="pdf_files" multiple class="form-control" required>
-                    </div>
-                    <div class="col-sm-3">
-                        <button class="btn btn-primary w-100">Index Files</button>
-                    </div>
-                </form>
-
-                <div class="list-group list-group-flush">
-                    {% for pdf in pdfs %}
-                    <div class="list-group-item d-flex justify-content-between align-items-center px-0 py-3">
-                        <span class="text-dark fw-medium">{{ pdf }}</span>
-                        <form method="POST"
-                              action="{{ url_for('delete_pdf', filename=pdf) }}"
-                              onsubmit="return confirm('Delete and re-index?');">
-                            <button class="btn btn-sm btn-outline-danger">Delete</button>
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white sticky-top" style="top: 20px; z-index: 1000;">
+                <div class="card-body p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h5 class="fw-bold text-slate mb-0">Conversation Log</h5>
+                        <form action="{{ url_for('clear_history') }}" method="POST" onsubmit="return confirm('Wipe all logs?');">
+                            <button type="submit" class="btn btn-sm btn-outline-danger border-0 fw-bold x-small">CLEAR ALL</button>
                         </form>
                     </div>
-                    {% endfor %}
+
+                    <div class="d-flex gap-2 mb-4">
+                        <a href="/export/csv" class="btn btn-light btn-sm flex-grow-1 rounded-3 fw-bold text-primary border-0">CSV</a>
+                        <a href="/export/pdf" class="btn btn-light btn-sm flex-grow-1 rounded-3 fw-bold text-danger border-0">PDF</a>
+                    </div>
+
+                    <div class="history-scroll custom-scroll" style="max-height: 70vh;">
+                        {% for item in history %}
+                        <div class="history-card group" onclick="this.classList.toggle('active')">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="history-timestamp">ENTRY #{{ loop.revindex }}</span>
+                                <button onclick="deleteHistoryItem({{ item.id }})" class="history-delete-btn">
+                                    <i class="bi bi-x-lg"></i>
+                                </button>
+                            </div>
+                            <div class="history-q text-slate">{{ item.question }}</div>
+                            <div class="history-a text-muted">{{ item.answer }}</div>
+                        </div>
+                        {% else %}
+                        <div class="text-center py-5 opacity-50">
+                            <i class="bi bi-inboxes fs-1 mb-2"></i>
+                            <p class="small">No logs generated yet</p>
+                        </div>
+                        {% endfor %}
+                    </div>
                 </div>
             </div>
-        </div>
-    </div>
-
-    <!-- ================= RIGHT COLUMN ================= -->
-    <div class="col-lg-4">
-        <h4 class="mb-3">🕘 History</h4>
-
-        <!-- 🔽 EXPORT BUTTONS (ONLY ADDITION) -->
-        <div class="d-flex gap-2 mb-3">
-            <a href="/export/csv" class="btn btn-outline-primary btn-sm w-50">
-                <i class="bi bi-file-earmark-spreadsheet"></i> CSV
-            </a>
-            <a href="/export/pdf" class="btn btn-outline-danger btn-sm w-50">
-                <i class="bi bi-file-earmark-pdf"></i> PDF
-            </a>
-        </div>
-        <!-- 🔼 END EXPORT BUTTONS -->
-
-        <div class="history-scroll overflow-auto" style="max-height: 80vh;">
-            {% for item in history %}
-            <div class="card border-0 shadow-sm mb-3">
-                <div class="card-body p-3">
-                    <p class="mb-1 text-primary fw-bold small">Q: {{ item.question }}</p>
-                    <p class="mb-0 text-secondary small text-truncate">{{ item.answer }}</p>
-                </div>
-            </div>
-            {% endfor %}
         </div>
     </div>
 </div>
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    :root {
+        --indigo: #4f46e5;
+        --indigo-subtle: #eef2ff;
+        --slate: #0f172a;
+        --border-color: #f1f5f9;
+    }
+
+    body { background-color: #f8fafc; font-family: 'Inter', sans-serif; }
+    .text-slate { color: var(--slate); }
+    .text-indigo { color: var(--indigo); }
+    .bg-indigo { background-color: var(--indigo); }
+    .bg-indigo-subtle { background-color: var(--indigo-subtle); }
+    .x-small { font-size: 0.7rem; }
+
+    /* HUD BOX */
+    .backdrop-blur { backdrop-filter: blur(5px); }
+
+    /* SEARCH DOCK */
+    .search-dock { display: flex; align-items: center; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 100px; padding: 6px; transition: all 0.3s ease; }
+    .search-dock:focus-within { border-color: var(--indigo); box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.1) !important; }
+    .btn-indigo { background: var(--indigo); color: white; transition: 0.2s; border: none; }
+    .btn-indigo:hover { background: #4338ca; transform: translateY(-1px); }
+
+    /* AI BRANDING */
+    .ai-brand-icon { width: 60px; height: 60px; background: var(--indigo); color: white; display: flex; align-items: center; justify-content: center; border-radius: 18px; font-size: 1.8rem; margin: 0 auto; box-shadow: 0 10px 15px -3px rgba(79, 70, 229, 0.3); }
+
+    /* ANSWER STYLING */
+    .answer-text { font-size: 1.15rem; line-height: 1.7; color: #334155; font-weight: 400; }
+    .source-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 15px; border-radius: 12px; transition: 0.2s; }
+    .source-snippet { font-size: 0.8rem; color: #64748b; line-height: 1.5; margin-top: 5px; font-style: italic; }
+
+    /* KNOWLEDGE BASE */
+    .upload-container { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 16px; padding: 10px; transition: 0.2s; }
+    .upload-container:hover { border-color: var(--indigo); }
+    .document-item { display: flex; justify-content: space-between; align-items: center; background: white; border: 1px solid #e2e8f0; padding: 12px; border-radius: 14px; transition: 0.2s; }
+    .document-item:hover { border-color: var(--indigo); transform: translateY(-2px); }
+    .doc-icon { width: 40px; height: 40px; background: #fff1f2; color: #e11d48; display: flex; align-items: center; justify-content: center; border-radius: 10px; font-size: 1.2rem; }
+    .doc-name { font-weight: 600; color: var(--slate); font-size: 0.85rem; }
+    .btn-delete { background: transparent; border: none; color: #94a3b8; transition: 0.2s; }
+    .btn-delete:hover { color: #e11d48; }
+
+    /* HISTORY CARDS */
+    .history-card { background: #ffffff; border: 1px solid #f1f5f9; padding: 16px; border-radius: 16px; margin-bottom: 12px; cursor: pointer; transition: 0.2s; }
+    .history-card:hover { background: #f8fafc; border-color: #e2e8f0; }
+    .history-timestamp { font-size: 0.65rem; font-weight: 800; color: var(--indigo); letter-spacing: 0.5px; }
+    .history-q { font-weight: 700; font-size: 0.9rem; margin-top: 4px; }
+    .history-a { font-size: 0.85rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-top: 8px; }
+    .history-card.active .history-a { -webkit-line-clamp: unset; }
+    .history-delete-btn { background: transparent; border: none; color: #cbd5e1; font-size: 0.9rem; transition: 0.2s; }
+    .history-delete-btn:hover { color: #e11d48; }
+
+    /* SCROLLBAR */
+    .custom-scroll::-webkit-scrollbar { width: 5px; }
+    .custom-scroll::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+    .animate-fade-in { animation: fadeIn 0.4s ease-out; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+
+<script>
+/**
+ * Deletes a specific question/answer from the database
+ */
+function deleteHistoryItem(historyId) {
+    if (event) event.stopPropagation(); 
+    if (confirm("Delete this log entry permanently?")) {
+        fetch(`/delete-history/${historyId}`, { 
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'}
+        })
+        .then(res => res.json())
+        .then(data => { if (data.success) location.reload(); });
+    }
+}
+</script>
 {% endblock %}

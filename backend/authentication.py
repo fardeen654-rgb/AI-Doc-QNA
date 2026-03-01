@@ -4,6 +4,8 @@ from flask_login import login_user, logout_user, login_required
 from database import db
 from models import User
 from services.email_service import send_email  # 🟢 Import Day 22 Email Service
+from app import mail
+from flask_mail import Message
 
 # Define the blueprint for authentication routes
 auth = Blueprint("auth", __name__)
@@ -70,6 +72,59 @@ def login():
         flash("Invalid username or password. ❌")
         
     return render_template("login.html")
+
+@auth.route("/forgot-password", methods=["GET", "POST"])
+def forgot_password():
+    if request.method == "POST":
+        email = request.form.get("email")
+        user = User.query.filter_by(email=email).first()
+
+        if user:
+            user.generate_reset_token()
+            db.session.commit()
+
+            reset_link = url_for(
+                "auth.reset_password",
+                token=user.reset_token,
+                _external=True
+            )
+
+            # print("RESET LINK (DEV):", reset_link)  # Email later
+            msg = Message(
+                subject="Password Reset",
+                sender=os.getenv("MAIL_USERNAME"),
+                recipients=[user.email],
+                body=f"Reset your password using this link:\n\n{reset_link}"
+            )
+
+            mail.send(msg)
+
+        flash("If the email exists, a reset link has been sent.", "info")
+        return redirect(url_for("auth.login"))
+
+    return render_template("forgot_password.html")
+
+
+@auth.route("/reset-password/<token>", methods=["GET", "POST"])
+def reset_password(token):
+    user = User.query.filter_by(reset_token=token).first()
+
+    if not user or user.reset_token_expiry < datetime.utcnow():
+        flash("Reset link is invalid or expired", "danger")
+        return redirect(url_for("auth.login"))
+
+    if request.method == "POST":
+        new_password = request.form.get("password")
+        user.set_password(new_password)
+        user.reset_token = None
+        user.reset_token_expiry = None
+        db.session.commit()
+
+        flash("Password reset successful. Please login.", "success")
+        return redirect(url_for("auth.login"))
+
+    return render_template("reset_password.html")
+
 
 @auth.route("/logout")
 @login_required

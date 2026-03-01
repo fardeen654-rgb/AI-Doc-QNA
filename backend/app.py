@@ -5,12 +5,13 @@ import io
 from datetime import date
 from flask import (
     Flask, render_template, request, flash,
-    redirect, url_for, send_file, Response
+    redirect, url_for, send_file, Response, jsonify
 )
 from flask_login import LoginManager, login_required, current_user
 from werkzeug.utils import secure_filename
 from dotenv import load_dotenv
-from xhtml2pdf import pisa  # Stable HTML-to-PDF converter
+from xhtml2pdf import pisa
+from flask_mail import Mail
 
 # 1. LOAD CONFIG & DATABASE
 load_dotenv()
@@ -30,6 +31,7 @@ from services.hybrid_search import hybrid_rerank
 # Initialize Services
 embedding_service = EmbeddingService()
 qa_engine = QAEngine()
+mail = Mail()
 
 def allowed_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in {"pdf"}
@@ -55,11 +57,19 @@ def check_rate_limit(max_limit):
 
 def create_app():
     app = Flask(__name__, template_folder="../frontend/templates", static_folder="../frontend/static")
-    app.config.from_object(Config) #
+    app.config.from_object(Config)
     
+    app.config.update(
+        MAIL_SERVER="smtp.gmail.com",
+        MAIL_PORT=587,
+        MAIL_USE_TLS=True,
+        MAIL_USERNAME=os.getenv("MAIL_USERNAME"),
+        MAIL_PASSWORD=os.getenv("MAIL_PASSWORD")
+    )
+
+    mail.init_app(app)
     db.init_app(app)
 
-    # 🟢 FIX: REGISTER BLUEPRINTS (Resolves the 404 Page Not Found)
     from authentication import auth 
     from admin import admin as admin_blueprint
     app.register_blueprint(auth)
@@ -105,30 +115,42 @@ def create_app():
     @app.route("/export/pdf")
     @login_required
     def export_pdf():
-        """Generates PDF using HTML templates to prevent horizontal space errors."""
         history = ChatHistory.query.filter_by(user_id=current_user.id).order_by(ChatHistory.created_at.desc()).all()
-        
-        # Build HTML content for the PDF
-        html_content = f"""
-        <html>
-        <head><style>body {{ font-family: Helvetica; padding: 20px; }} .entry {{ border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 10px; }}</style></head>
-        <body>
-            <h1 style='text-align:center;'>Chat History: {current_user.username}</h1>
-        """
+        html_content = f"<html><head><style>body {{ font-family: Helvetica; padding: 20px; }} .entry {{ border-bottom: 1px solid #eee; margin-bottom: 10px; padding-bottom: 10px; }}</style></head><body><h1 style='text-align:center;'>Chat History: {current_user.username}</h1>"
         for item in history:
-            html_content += f"""
-            <div class='entry'>
-                <p><strong>Q:</strong> {item.question}</p>
-                <p><strong>A:</strong> {item.answer}</p>
-                <p style='font-size:10px; color:#888;'>Date: {item.created_at}</p>
-            </div>"""
+            html_content += f"<div class='entry'><p><strong>Q:</strong> {item.question}</p><p><strong>A:</strong> {item.answer}</p><p style='font-size:10px; color:#888;'>Date: {item.created_at}</p></div>"
         html_content += "</body></html>"
-
         pdf_out = io.BytesIO()
-        pisa.CreatePDF(html_content, dest=pdf_out) #
+        pisa.CreatePDF(html_content, dest=pdf_out)
         pdf_out.seek(0)
-
         return send_file(pdf_out, mimetype="application/pdf", as_attachment=True, download_name="chat_history.pdf")
+
+    # --- 🗑️ NEW: DELETE ROUTES ---
+
+    @app.route("/delete-history/<int:history_id>", methods=["POST"])
+    @login_required
+    def delete_history_item(history_id):
+        # This route ONLY deletes. It does NOT call track_usage()
+        item = ChatHistory.query.filter_by(id=history_id, user_id=current_user.id).first()
+        if item:
+            db.session.delete(item)
+            db.session.commit()
+            # Return JSON success
+            return jsonify({"success": True})
+        return jsonify({"success": False}), 404
+
+    @app.route("/clear-history", methods=["POST"])
+    @login_required
+    def clear_history():
+        """Delete all chat history for the logged-in user."""
+        try:
+            ChatHistory.query.filter_by(user_id=current_user.id).delete()
+            db.session.commit()
+            flash("Entire chat history cleared! 🧹")
+        except Exception as e:
+            db.session.rollback()
+            flash("Error clearing history. ⚠️")
+        return redirect(url_for("home"))
 
     # --- HOME LOGIC ---
     @app.route("/", methods=["GET", "POST"])
@@ -193,7 +215,6 @@ def create_app():
         if os.path.exists(file_path): os.remove(file_path)
         if os.path.exists(user_index_dir): shutil.rmtree(user_index_dir)
         os.makedirs(user_index_dir, exist_ok=True)
-        # Re-index remaining
         vs = VectorStore(user_index_dir)
         for pdf in os.listdir(user_upload_dir):
             txt = clean_text(extract_text_from_pdf(os.path.join(user_upload_dir, pdf)))

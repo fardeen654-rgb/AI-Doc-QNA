@@ -17,6 +17,11 @@
                 <button class="btn btn-primary w-100 py-2">Sign In</button>
             </form>
             <p class="text-center mt-3 mb-0">New user? <a href="/register">Create Account</a></p>
+            <div class="text-center mt-2">
+                <a href="{{ url_for('auth.forgot_password') }}" class="small">
+                    Forgot password?
+                </a>
+            </div>
         </div>
     </div>
 </div>

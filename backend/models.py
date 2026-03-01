@@ -1,6 +1,7 @@
 from database import db
 from flask_login import UserMixin
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
+import secrets
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
@@ -10,10 +11,17 @@ class User(db.Model, UserMixin):
     password = db.Column(db.String(200), nullable=False)
     role = db.Column(db.String(20), default="user") 
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
-    
+
     chats = db.relationship('ChatHistory', backref='author', lazy=True)
     analytics = db.relationship('UsageAnalytics', backref='user', lazy=True)
 
+
+    reset_token = db.Column(db.String(100), nullable=True)
+    reset_token_expiry = db.Column(db.DateTime, nullable=True)
+
+    def generate_reset_token(self):
+        self.reset_token = secrets.token_urlsafe(32)
+        self.reset_token_expiry = datetime.utcnow() + timedelta(minutes=30)
 
 class ChatHistory(db.Model):
     id = db.Column(db.Integer, primary_key=True)
